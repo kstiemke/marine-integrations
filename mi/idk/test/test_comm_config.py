@@ -45,6 +45,7 @@ INSTRUMENT_ADDR = 'localhost'
 INSTRUMENT_PORT = 4000
 COMMAND_PORT = 4001
 DATA_PORT = 4002
+INSTRUMENT_COMMAND_PORT = 4003
 
 #
 # Serial
@@ -91,6 +92,17 @@ class TestCommConfig(MiUnitTest):
                "  sniffer_port: %d\n" % (SNIFFER_PORT) + \
                "  method: ethernet\n"
 
+    def config_rsn_content(self):
+        return "comm:\n" +\
+               "  command_port: %d\n" % (COMMAND_PORT) + \
+               "  data_port: %d\n" % (DATA_PORT) + \
+               "  device_addr: %s\n" % (INSTRUMENT_ADDR) + \
+               "  device_port: %d\n" % (INSTRUMENT_PORT) + \
+               "  instrument_command_port: %d\n" % (INSTRUMENT_COMMAND_PORT) + \
+               "  host: %s\n" % (HOST) + \
+               "  sniffer_port: %d\n" % (SNIFFER_PORT) + \
+               "  method: rsn\n"
+
     def config_serial_content(self):
         return "comm:\n" +\
                "  command_port: %d\n" % (COMMAND_PORT) +\
@@ -108,6 +120,11 @@ class TestCommConfig(MiUnitTest):
     def write_ethernet_config(self):
         ofile = open(self.config_file(), "w");
         ofile.write(self.config_ethernet_content())
+        ofile.close()
+
+    def write_rsn_config(self):
+        ofile = open(self.config_file(), "w");
+        ofile.write(self.config_rsn_content())
         ofile.close()
 
     def write_serial_config(self):
@@ -170,7 +187,7 @@ class TestCommConfig(MiUnitTest):
         types = CommConfig.valid_type_list()
         log.debug( "types: %s" % types)
         
-        known_types = [ConfigTypes.ETHERNET, ConfigTypes.SERIAL, ConfigTypes.BOTPT, ConfigTypes.MULTI]
+        known_types = [ConfigTypes.ETHERNET, ConfigTypes.RSN, ConfigTypes.SERIAL, ConfigTypes.BOTPT, ConfigTypes.MULTI]
         
         self.assertEqual(sorted(types), sorted(known_types))
         
@@ -255,3 +272,34 @@ class TestCommConfig(MiUnitTest):
         multi_config = CommConfig.get_config_from_type(self.config_file(), ConfigTypes.MULTI)
         self.assertEqual(multi_config.configs['test'].dict(), ethernet_config.dict())
 
+    def test_9_config_write_rsn(self):
+        log.debug("Config File: %s" % self.config_file())
+        if exists(self.config_file()):
+            log.debug(" -- remove %s" % self.config_file())
+            remove(self.config_file())
+
+        self.assertFalse(exists(self.config_file()))
+
+        config = CommConfig.get_config_from_type(self.config_file(), ConfigTypes.RSN)
+        config.device_addr = INSTRUMENT_ADDR
+        config.device_port = INSTRUMENT_PORT
+        config.data_port = DATA_PORT
+        config.command_port = COMMAND_PORT
+        config.instrument_command_port = INSTRUMENT_COMMAND_PORT
+
+        log.debug("CONFIG: %s" % config.serialize())
+
+        config.store_to_file()
+
+        # order isnt the same, so lets turn it into an array of label: value's then sort and compare.
+        self.assertEqual(sorted(string.replace(self.config_rsn_content(), "\n", '').split('  ')),
+                         sorted(string.replace(self.read_config(), "\n", '').split('  ')))
+
+    def test_10_config_read_rsn(self):
+        config = CommConfig.get_config_from_type(self.config_file(), ConfigTypes.RSN)
+
+        self.assertEqual(config.device_addr, INSTRUMENT_ADDR)
+        self.assertEqual(config.device_port, INSTRUMENT_PORT)
+        self.assertEqual(config.data_port, DATA_PORT)
+        self.assertEqual(config.command_port, COMMAND_PORT)
+        self.assertEqual(config.instrument_command_port, INSTRUMENT_COMMAND_PORT)
