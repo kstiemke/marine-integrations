@@ -265,7 +265,7 @@ class TestCommConfig(MiUnitTest):
         self.test_4_config_write_ethernet()
         ethernet_config = CommConfig.get_config_from_type(self.config_file(), ConfigTypes.ETHERNET)
         # stuff it into a multi-comm config
-        config = { 'comm': {'method': 'multi', 'configs': {'test': {'comm': ethernet_config.dict()}}}}
+        config = {'comm': {'method': 'multi', 'configs': {'test': {'comm': ethernet_config.dict()}}}}
         # dump the new config to a file
         open(self.config_file(), 'wb').write(yaml.dump(config))
         # load the config from file, verify the embedded config matches the original ethernet config
